@@ -38,11 +38,11 @@ local Window = nil
 do
   local ok, w = pcall(function()
     return splib:MakeWindow({
-      Name = "XX Library v2",
-      SubTitle = "by SuperCosmos",
+      Name = "SP Library v2",
+      SubTitle = "by SuperCosmos and CR33P",
       Setting = false,
       Intro = true,
-      IntroText = "XX Hub Loading",
+      IntroText = "XCP Hub Loading",
       IntroIcon = "null",
       IntroSpeed = 1,
       Toggle = false,
@@ -1193,5 +1193,92 @@ if usedFallback then
       end
     end
   end)
+end
+
+local function sanitizeNumberText(text)
+  return tostring(text or ""):gsub("%D", "")
+end
+
+local function findPlayerMoneyStat()
+  local moneyNames = {"Money", "Cash", "Coins", "Currency", "Balance", "Wallet"}
+  local function matchesName(obj)
+    for _, name in ipairs(moneyNames) do
+      if obj.Name == name then
+        return true
+      end
+    end
+    return false
+  end
+
+  local function search(root)
+    if not root or not root.GetDescendants then
+      return nil
+    end
+    for _, obj in ipairs(root:GetDescendants()) do
+      if (obj:IsA("IntValue") or obj:IsA("NumberValue")) and matchesName(obj) then
+        return obj
+      end
+    end
+    return nil
+  end
+
+  if LocalPlayer then
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    if leaderstats then
+      local stat = search(leaderstats)
+      if stat then
+        return stat
+      end
+    end
+    return search(LocalPlayer)
+  end
+  return nil
+end
+
+local function setPlayerMoney(amount)
+  amount = tonumber(amount)
+  if not amount then
+    return false
+  end
+  local stat = findPlayerMoneyStat()
+  if not stat then
+    return false
+  end
+  if stat:IsA("IntValue") then
+    stat.Value = math.floor(amount)
+  else
+    stat.Value = amount
+  end
+  return true
+end
+
+local testTab = Window:AddPlayerTab({
+    IsMobile = false,
+    IsPC = false,
+    Name = "Test",
+    Icon = "rbxassetid://4483345998"
+})
+
+testTab:AddSection("Test Section")
+
+local moneyTextBox = testTab:AddTextbox({
+  Name = "Money Amount",
+  Desc = "Type a number and press Enter to change your money.",
+  PlaceholderText = "Numbers only",
+  Default = "",
+  Flag = "TestMoneyAmount",
+  Callback = function(Value)
+    local amount = sanitizeNumberText(Value)
+    if amount == "" then
+      return
+    end
+    setPlayerMoney(amount)
+  end
+})
+
+if moneyTextBox then
+  moneyTextBox.OnChanging = function(text)
+    return sanitizeNumberText(text)
+  end
 end
 
